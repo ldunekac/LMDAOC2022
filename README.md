@@ -1,2 +1,2 @@
 # LMDAOC2022
-Avent of code 2022
+Advent of code 2022
