@@ -37,10 +37,10 @@ def solution2(input_file):
 
 def main():
     solution1("example.txt")
-    solution1("part1_input.txt")
+    solution1("input.txt")
     
     solution2("example.txt")
-    solution2("part1_input.txt")
+    solution2("input.txt")
 
 
 if __name__ == "__main__":
