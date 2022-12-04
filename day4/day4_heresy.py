@@ -12,7 +12,7 @@ def is_some_what_of_a_slacker(elf1, elf2):
 
 
 def parse_line(line):
-    vals = tuple(int(x) for x in re.split(',|-', line.strip()))
+    vals = tuple(int(x) for x in re.split(',|-', line))
     return (vals[0], vals[1]), (vals[2], vals[3])
 
 
