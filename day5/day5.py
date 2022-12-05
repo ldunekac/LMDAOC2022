@@ -5,7 +5,7 @@ class ContainerYard():
     def __init__(self, number_of_stacks: int) -> None:
         self.number_of_stacks = number_of_stacks
         self.yard = []
-        for i in range(number_of_stacks):
+        for _ in range(number_of_stacks):
             self.yard.append(list()) 
 
     def add_crate(self, crate_letter: str, stack_index: int)->None:
