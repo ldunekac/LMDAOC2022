@@ -60,7 +60,8 @@ class Rope:
                     Rope._change_distance_by(difference.y)
                 )
             )
-        return tail
+        else:
+            return tail
 
 
 def parse_line(text: str) -> Generator:
