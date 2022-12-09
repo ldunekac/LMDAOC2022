@@ -2,46 +2,49 @@ from typing import Generator
 from dataclasses import dataclass
 
 @dataclass(frozen=True)
-class Position:
+class Coordinate:
     x: int = 0
     y: int = 0
 
     @staticmethod
-    def add_positions(position1, position2):
-        return Position(
-            position1.x + position2.x,
-            position1.y + position2.y
+    def add(coordinate1, coordinate2):
+        return Coordinate(
+            coordinate1.x + coordinate2.x,
+            coordinate1.y + coordinate2.y
         )
 
     @staticmethod
-    def difference(position1, position2):
-        return Position(
-            position1.x - position2.x,
-            position1.y - position2.y
+    def subtract(coordinate1, coordinate2):
+        return Coordinate(
+            coordinate1.x - coordinate2.x,
+            coordinate1.y - coordinate2.y
         )
 
 class Rope:
 
     def __init__(self, rope_length: int):
-        self.rope_length: int = rope_length
-        self.rope:list = [Position() for _ in range(rope_length)]
-        self.tail_locations: set = set()
-        self.tail_locations.add(self.rope[-1])
+        self.rope:list = [Coordinate() for _ in range(rope_length)]
+        self.coordinates_that_the_tail_has_touched: set = {self.rope[-1]} # Fist position of the tail
 
-    def move(self, direction: Position):
-        self.rope[0] = Position.add_positions(self.rope[0], direction)
-        for i in range(1, self.rope_length):
-            self.rope[i] = Rope._update_tail(self.rope[i-1], self.rope[i])
-        self._store_path(self.rope[-1])
+    def move(self, direction: Coordinate):
+        """
+        :param direction:   One-step Coordinate: (1,0), (-1,0), (0,1), or (0,-1).
+                            This is not checked because AoC (not production code)
+        :return:
+        """
+        self.rope[0] = Coordinate.add(self.rope[0], direction)
+        for i in range(1, len(self.rope)):
+            self.rope[i] = Rope.update_tail(self.rope[i-1], self.rope[i])
+        self.add_tail_coordinate_to_coordinates_seen()
 
-    def _store_path(self, new_tail_location: Position):
-        self.tail_locations.add(new_tail_location)
+    def add_tail_coordinate_to_coordinates_seen(self):
+        self.coordinates_that_the_tail_has_touched.add(self.rope[-1])
 
-    def count_num_spaces_that_the_tail_touched(self) -> int:
-        return len(self.tail_locations)
+    def count_num_coordinates_that_the_tail_has_touched(self) -> int:
+        return len(self.coordinates_that_the_tail_has_touched)
 
     @staticmethod
-    def _change_distance_by(amount: int) -> int:
+    def change_distance_by(amount: int) -> int:
         if amount == 0:
             return 0
         elif amount > 0:
@@ -50,14 +53,14 @@ class Rope:
             return -1
 
     @staticmethod
-    def _update_tail(head: Position, tail: Position) -> Position:
-        difference = Position.difference(head, tail)
+    def update_tail(head: Coordinate, tail: Coordinate) -> Coordinate:
+        difference = Coordinate.subtract(head, tail)
         if abs(difference.x) > 1 or abs(difference.y) > 1:
-            return Position.add_positions(
+            return Coordinate.add(
                 tail,
-                Position(
-                    Rope._change_distance_by(difference.x),
-                    Rope._change_distance_by(difference.y)
+                Coordinate(
+                    Rope.change_distance_by(difference.x),
+                    Rope.change_distance_by(difference.y)
                 )
             )
         else:
@@ -66,10 +69,10 @@ class Rope:
 
 def parse_line(text: str) -> Generator:
     direction_map = {
-        "R": Position(1, 0), # X, Y
-        "L": Position(-1, 0),
-        "U": Position(0, 1),
-        "D": Position(0, -1),
+        "R": Coordinate(1, 0), # X, Y
+        "L": Coordinate(-1, 0),
+        "U": Coordinate(0, 1),
+        "D": Coordinate(0, -1),
     }
     direction, count = text.strip().split(" ")
     for i in range(int(count)):
@@ -82,20 +85,20 @@ def read_input(file: str) -> Generator:
             yield line
 
 
-def solution1(file:str) -> int:
-    rope = Rope(2)
+def solution(file: str, tail_length: int) -> int:
+    rope = Rope(tail_length)
     for line in read_input(file):
         for command in parse_line(line):
             rope.move(command)
-    return rope.count_num_spaces_that_the_tail_touched()
+    return rope.count_num_coordinates_that_the_tail_has_touched()
+
+
+def solution1(file:str) -> int:
+    return solution(file, 2)
 
 
 def solution2(file: str) -> int:
-    rope = Rope(10)
-    for line in read_input(file):
-        for command in parse_line(line):
-            rope.move(command)
-    return rope.count_num_spaces_that_the_tail_touched()
+    return solution(file, 10)
 
 
 def main():
