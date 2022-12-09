@@ -24,7 +24,7 @@ def find_visible_trees(trees, views):
     trees = np.flip(trees, axis=1)
     views = np.flip(views, axis=1)
     iterate_through_rows(trees, views)
-    # Just getting the matricies back to the original spot for debugging
+    # Just getting the matrices back to the original spot for debugging
     trees = np.flip(trees, axis=1)
     views = np.flip(views, axis=1)
     trees = np.transpose(trees)
@@ -32,11 +32,11 @@ def find_visible_trees(trees, views):
 
 def read_input(file):
     with open(file) as f:
-        input = f.readlines()
-        num_rows = len(input)
-        num_columns = len(input[0].strip())
-        input = [[int(x) for x in i.strip()] for i in input]
-        return np.array(input), np.zeros((num_rows, num_columns), dtype=int)
+        input_lines = f.readlines()
+        num_rows = len(input_lines)
+        num_columns = len(input_lines[0].strip())
+        input_lines = [[int(x) for x in i.strip()] for i in input_lines]
+        return np.array(input_lines), np.zeros((num_rows, num_columns), dtype=int)
 
 
 def solution1(file):
