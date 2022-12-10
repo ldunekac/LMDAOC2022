@@ -24,7 +24,6 @@ class Computer:
         self.signal_strengths = []
         self.computer_screen = []
 
-
     def add_row_to_screen(self, row: int):
         if len(self.computer_screen) - 1 < row:
             self.computer_screen.append("")
@@ -42,7 +41,9 @@ class Computer:
 
 
     def add_signal_strengths(self):
-        if self.current_cycle % 40 == 20:
+        cycle_period = 40
+        sample_cycle = 20
+        if self.current_cycle % cycle_period == sample_cycle:
             self.signal_strengths.append(self.current_cycle * self.registerX)
 
 
