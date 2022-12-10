@@ -31,8 +31,9 @@ class Computer:
 
 
     def draw_pixel(self):
-        row = (self.current_cycle - 1) // 40
-        column = (self.current_cycle - 1) % 40
+        row_width = 40
+        row = (self.current_cycle - 1) // row_width
+        column = (self.current_cycle - 1) % row_width
         self.add_row_to_screen(row)
         if self.registerX - 1 <= column <= self.registerX + 1:
             self.computer_screen[row] += "#"
