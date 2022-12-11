@@ -94,7 +94,7 @@ def perform_round(monkey_list, sanity):
             monkey.inspect_item()
             new_worry_value = monkey.operation(item) // sanity
             divides_into = new_worry_value // common_denominator
-            new_worry_value = new_worry_value - common_denominator * divides_into
+            new_worry_value = new_worry_value - (common_denominator * divides_into)
             if new_worry_value % monkey.test == 0:
                 monkey.true_monkey.add_item(new_worry_value)
             else:
