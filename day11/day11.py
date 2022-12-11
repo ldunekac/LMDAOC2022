@@ -33,9 +33,11 @@ class Monkey:
         print(f"True Monkey: {self.false_monkey.number}")
         print(f"Inspected: {self.total_inspected_items}")
 
+
 def pase_starting_items_string(line: str):
     item_string = line.split("items:")[1]
     return [int(item.strip()) for item in item_string.split(",")]
+
 
 def pase_operation_string(line: str):
     op_map = {
@@ -51,11 +53,14 @@ def pase_operation_string(line: str):
     else:
         return op_map[op](int(val))
 
+
 def parse_test_condition(line: str):
     return int(line.split("by ")[-1].strip())
 
+
 def get_monkey_to_throw_to(line: str):
     return int(line.split("monkey ")[-1].strip())
+
 
 def create_monkey(monkey_number, monkey_lines):
     starting_items = pase_starting_items_string(monkey_lines[1])
@@ -70,18 +75,20 @@ def parse_input(file):
     monkey_list = []
     with open(file, "r") as f:
         lines = [line for line in f.read().split("\n") if line]
+
     for i in range(len(lines)//6):
         monkey_list.append(create_monkey(i, lines[i*6:i*6+6]))
 
     for monkey, true_index, false_index in monkey_list:
         monkey.add_true_monkey(monkey_list[true_index][0])
         monkey.add_false_monkey(monkey_list[false_index][0])
+
     return [monkey[0] for monkey in monkey_list]
 
 
 def perform_round(monkey_list, sanity):
     common_denominator = reduce(lambda x,y: x*y,
-                            [monkey.test for monkey in monkey_list])
+                                [monkey.test for monkey in monkey_list])
     for monkey in monkey_list:
         for item in monkey.items:
             monkey.inspect_item()
@@ -103,11 +110,9 @@ def solution1(file:str) -> int:
            sorted([monkey.total_inspected_items for monkey in monkeys], reverse=True)[:2])
 
 
-
-
 def solution2(file: str) -> int:
     monkeys = parse_input(file)
-    for i in range(10000):
+    for _ in range(10000):
         perform_round(monkeys, sanity=1)
     return reduce(lambda x,y: x*y,
            sorted([monkey.total_inspected_items for monkey in monkeys], reverse=True)[:2])
