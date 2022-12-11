@@ -87,14 +87,11 @@ def parse_input(file):
 
 
 def perform_round(monkey_list, sanity):
-    common_denominator = reduce(lambda x,y: x*y,
-                                [monkey.test for monkey in monkey_list])
+    common_denominator = reduce(lambda x,y: x*y, [monkey.test for monkey in monkey_list])
     for monkey in monkey_list:
         for item in monkey.items:
             monkey.inspect_item()
-            new_worry_value = monkey.operation(item) // sanity
-            divides_into = new_worry_value // common_denominator
-            new_worry_value = new_worry_value - (common_denominator * divides_into)
+            new_worry_value = (monkey.operation(item) // sanity) % common_denominator
             if new_worry_value % monkey.test == 0:
                 monkey.true_monkey.add_item(new_worry_value)
             else:
