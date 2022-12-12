@@ -18,36 +18,31 @@ def find_shortest_path(grid, start, end):
         current_height = grid[current_row][current_column]
         number_of_steps_in_path = next_path[2]
 
-        if (current_row, current_column) in paths_seen:
-            continue
-        else:
-            paths_seen.add((current_row, current_column))
-
         up = current_row - 1
         if  up >= 0: # moving up is in the grid
             if grid[up][current_column] <= current_height + 1:
-                if paths_len.get((up, current_column), max_num_steps) > number_of_steps_in_path:
+                if paths_len.get((up, current_column), max_num_steps) > number_of_steps_in_path + 1:
                     paths_len[(up, current_column)] = number_of_steps_in_path + 1
                     paths.append((up, current_column, number_of_steps_in_path + 1))
 
         down = current_row + 1
         if  down < num_rows_in_grid: # moving down is in the grid
             if grid[down][current_column] <= current_height + 1:
-                if paths_len.get((down, current_column), max_num_steps) > number_of_steps_in_path:
+                if paths_len.get((down, current_column), max_num_steps) > number_of_steps_in_path + 1:
                     paths_len[(down, current_column)] = number_of_steps_in_path + 1
                     paths.append((down, current_column, number_of_steps_in_path + 1))
 
         left = current_column - 1
         if  left >= 0: # moving left is in the grid
             if grid[current_row][left] <= current_height + 1:
-                if paths_len.get((current_row, left), max_num_steps) > number_of_steps_in_path:
+                if paths_len.get((current_row, left), max_num_steps) > number_of_steps_in_path + 1:
                     paths_len[(current_row, left)] = number_of_steps_in_path + 1
                     paths.append((current_row, left, number_of_steps_in_path + 1))
 
         right = current_column + 1
         if  right < num_columns_in_grid: # moving right is in the grid
             if grid[current_row][right] <= current_height + 1:
-                if paths_len.get((current_row, right), max_num_steps) > number_of_steps_in_path:
+                if paths_len.get((current_row, right), max_num_steps) > number_of_steps_in_path + 1:
                     paths_len[(current_row, right)] = number_of_steps_in_path + 1
                     paths.append((current_row, right, number_of_steps_in_path + 1))
 
