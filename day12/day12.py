@@ -9,10 +9,7 @@ def find_shortest_path(grid, start, end):
     paths_len = {
         start_path: 0
     }
-    max_iter = 0
-    while len(paths) > 0 and max_iter < max_num_steps:
-        max_iter += 1
-
+    while len(paths) > 0:
         next_path = paths.pop(0)
         current_row = next_path[0]
         current_column = next_path[1]
