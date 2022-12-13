@@ -41,7 +41,7 @@ def are_packets_in_order(packet1, packet2):
 def solution1(file: str) -> int:
     correct_ordered_packets = []
     for index, (packet1, packet2) in enumerate(get_pairs(file)):
-        if are_packets_in_order(packet1, packet2) < 0:
+        if are_packets_in_order(packet1, packet2) <= 0:
             correct_ordered_packets.append(index + 1)
     return sum(correct_ordered_packets)
 
