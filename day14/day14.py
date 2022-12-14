@@ -125,10 +125,10 @@ def solution2(file: str) -> int:
     maxx, minx, maxy, miny = get_mins_and_maxes(paths)
     paths = subtract_mins(minx, 0, paths)
     max_height = maxy + 1 + 2
-    grid = np.ndarray(shape=(maxy + 1 + 2, maxx - minx + 1 + max_height*2), dtype=int)
+    grid = np.ndarray(shape=(maxy + 1 + 2, maxx - minx + max_height * 2), dtype=int)
     grid.fill(0)
-    grid = fill_grid(grid, paths, max_height + 1)
-    sand_count = simulate(grid, (0, 500-minx+max_height+1))
+    grid = fill_grid(grid, paths, max_height)
+    sand_count = simulate(grid, (0, 500 - minx + max_height))
     print_grid(grid, "solution2"+file)
     return  sand_count
 
