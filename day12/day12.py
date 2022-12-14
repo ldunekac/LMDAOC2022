@@ -44,7 +44,6 @@ def find_shortest_path(grid, start, end):
                     paths_len[(current_row, right)] = number_of_steps_in_path + 1
                     paths.append((current_row, right, number_of_steps_in_path + 1))
 
-
     return paths_len.get(end, max_num_steps)
 
 def make_graph(file: str):
