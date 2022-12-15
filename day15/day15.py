@@ -89,6 +89,7 @@ def get_pos_where_beacon_caonnot_exist(sensors, beacons, test_y):
     combined_ranges.append((start_range, end_range))
     return combined_ranges
 
+
 def solution2(file: str, max_x) -> int:
     sensors, beacons = parse_input(file) 
     start = time.perf_counter()
