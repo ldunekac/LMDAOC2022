@@ -59,10 +59,6 @@ def solution1(file: str, y_test) -> int:
     return get_num_positions_where_beacons_caonnot_exist(sensors, beacons, y_test)
 
 
-
-
-
-
 def get_pos_where_beacon_caonnot_exist(sensors, beacons, test_y):
     ranges = []
     for s, b in zip(sensors, beacons):
@@ -112,7 +108,7 @@ def main():
     print(f"Solution 1 for Example is: {ans}")
     ans = solution1("input.txt", 2000000)
     print(f"Solution 1 for Input is: {ans}")
-# 
+
     ans = solution2("example.txt", 20)
     print(f"Solution 2 for Example is: {ans}")
     ans = solution2("input.txt", 4000000)
