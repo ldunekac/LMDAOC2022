@@ -196,133 +196,110 @@ def simulateWithElephant(graph, nodes, potential, node_to_flow):
 
 
 def simulateWithElephant2(graph, nodes, potential, node_to_flow):
-    max_minutes = 26
+    max_minutes = 30 # TODO change back
     nodes = set(nodes)
     node_len = len(nodes)
     max_potential = max_minutes * potential
 
     queue = PriorityQueue()
-    queue.put(State2(0, 0, 0, 0, set(), "AA", "AA", "AA", "AA"))
+    queue.put(State2(-max_potential, 0, 0, 0, set(), "AA", "AA", "AA", "AA"))
     while True:
         if queue.empty():
             break
         item = queue.get()
-        print(item)
         if item.current_step == max_minutes:
+            print("END")
             print(item)
             return item.total_pressure_released
-        if len(item.valves_open) == node_len+1:
-            total_pressure_released = item.total_pressure_released +  item.pressure_being_released * (max_minutes - item.current_step)
-            State2(
+
+        if len(item.valves_open) == node_len:
+            assert item.pressure_being_released == potential
+            total_pressure_released = item.total_pressure_released +  item.pressure_being_released * (max_minutes - item.current_step + 1)
+            assert total_pressure_released < max_potential
+            queue.put(State2(
                 -total_pressure_released,
                 max_minutes,
+                item.pressure_being_released,
                 total_pressure_released,
-                item.total_pressure_released,
                 item.valves_open,
                 "",
                 "",
                 "",
                 ""
-            )
+            ))
             continue
 
-        you_at_dest_valve = item.current_loc == item.you_in_route_to
-        elephant_at_dest_valve = item.elephant_current_loc == item.elephant_in_route_to
-
-        if you_at_dest_valve and elephant_at_dest_valve:
+        ## Case you and elephant both at stops
+        if item.current_loc == item.elephant_current_loc:
+            # unlock the valves
+            # go one step forward updating the total_pressure_released
             total_pressure_released = item.total_pressure_released + item.pressure_being_released
-            valves_open = item.valves_open.copy()
-            valves_open.add(item.current_loc)
-            valves_open.add(item.elephant_current_loc)
-            remaining_valves = nodes - valves_open
-            updated_pressure_being_released = item.pressure_being_released + node_to_flow[item.elephant_current_loc] + node_to_flow[item.current_loc]
+            assert total_pressure_released < max_potential
 
-            for you_next_valve in remaining_valves:
-                for elephant_next_valve in remaining_valves:
-                    if not elephant_next_valve == you_next_valve:
-                        your_path = nx.shortest_path(graph, source=item.current_loc, target=you_next_valve)
-                        elephant_path = nx.shortest_path(graph, source=item.elephant_current_loc, target=elephant_next_valve)
-                        shortest_path = min(
-                            len(your_path)-1,
-                            len(elephant_path)-1)
-                        total_pressure_released += updated_pressure_being_released * shortest_path
+            current_open_valves = item.valves_open.copy()
+            if item.current_loc in current_open_valves or item.elephant_current_loc in current_open_valves:
+                # When we come to an open valve we are not on the optimal path anymore
+                continue
+            # assert not item.current_loc in current_open_valves
+            # assert not item.elephant_current_loc in current_open_valves
 
-                        new_priority = - total_pressure_released - (
-                                    max_minutes - item.current_step - 1) * potential
+            current_open_valves.add(item.current_loc) if not item.current_loc == 'AA' else None
+            current_open_valves.add(item.elephant_current_loc) if not item.elephant_current_loc == 'AA' else None
+
+            current_open_pressure = item.pressure_being_released
+            if item.current_loc == item.elephant_current_loc:
+                current_open_pressure = item.pressure_being_released + node_to_flow[item.current_loc]
+                assert current_open_pressure == sum(node_to_flow[x] for x in current_open_valves)
+            else:
+                current_open_pressure = item.pressure_being_released + node_to_flow[item.current_loc] + node_to_flow[elephant_current_loc]
+                assert current_open_pressure == sum(node_to_flow[x] for x in current_open_valves)
+            
+            valves_remaining = nodes - current_open_valves
+            if len(valves_remaining) == 0:
+                # No more valves
+                assert sum(node_to_flow[x] for x in valves_remaining.union(current_open_valves)) == 81
+                new_priority = (-total_pressure_released_after_steps) - ((max_minutes - item.current_step - 1)* potential)
+                assert new_priority >= -2106
+                queue.put(State2(
+                    new_priority,
+                    item.current_step+1,
+                    current_open_pressure,
+                    total_pressure_released,
+                    current_open_valves,
+                    "",
+                    "",
+                    "",
+                    ""
+                ))
+            else:
+                assert sum(node_to_flow[x] for x in valves_remaining.union(current_open_valves)) == 81
+                for you_new_dest in valves_remaining:
+                    for elephant_new_dest in valves_remaining:
+                        you_path = nx.shortest_path(graph, item.current_loc, you_new_dest)
+                        elephant_path = nx.shortest_path(graph, item.elephant_current_loc, elephant_new_dest)
+                        num_steps = min(
+                            len(you_path) - 1,
+                            len(elephant_path) - 1
+                        )
+                        total_pressure_released_after_steps = total_pressure_released + (num_steps*current_open_pressure)
+                        steps_taken = item.current_step + num_steps + 1 # 1 for opening the valve
+                        new_priority = (-total_pressure_released_after_steps) - ((max_minutes - steps_taken)* potential)
+                        assert new_priority >= -max_potential
+                        assert steps_taken <= max_minutes
+                        assert total_pressure_released_after_steps <= max_potential
                         queue.put(
                             State2(
                                 new_priority,
-                                item.current_step + shortest_path + 1,
-                                updated_pressure_being_released,
-                                total_pressure_released,
-                                valves_open,
-                                your_path[shortest_path],
-                                elephant_path[shortest_path],
-                                you_next_valve,
-                                elephant_next_valve
-                            ))
-
-        elif you_at_dest_valve:
-            valves_open = item.valves_open.copy()
-            valves_open.add(item.current_loc)
-            remaining_valves = nodes - valves_open
-            elephant_path = nx.shortest_path(graph, source=item.elephant_current_loc, target=item.elephant_in_route_to)[1:]
-            for you_next_valve in remaining_valves:
-                total_pressure_released = item.total_pressure_released + item.pressure_being_released
-                updated_pressure_being_released = item.pressure_being_released + node_to_flow[item.current_loc]
-                your_path = nx.shortest_path(graph, source=item.current_loc, target=you_next_valve)
-
-                shortest_path = min(
-                    len(your_path) - 1,
-                    len(elephant_path) - 1 )
-
-                total_pressure_released += updated_pressure_being_released * shortest_path
-
-                new_priority =  - total_pressure_released - (
-                            max_minutes - item.current_step - 1) * potential
-                queue.put(
-                    State2(
-                        new_priority,
-                        item.current_step + shortest_path + 1,
-                        updated_pressure_being_released,
-                        total_pressure_released,
-                        valves_open,
-                        your_path[shortest_path],
-                        elephant_path[shortest_path],
-                        you_next_valve,
-                        item.elephant_in_route_to
-                    )
-                )
-        else:
-            valves_open = item.valves_open.copy()
-            valves_open.add(item.current_loc)
-            remaining_valves = nodes - valves_open
-            your_path = nx.shortest_path(graph, source=item.current_loc, target=item.you_in_route_to)[1:]
-            for elephant_path_next_valve in remaining_valves:
-                total_pressure_released = item.total_pressure_released + item.pressure_being_released
-                updated_pressure_being_released = item.pressure_being_released + node_to_flow[item.elephant_current_loc]
-                elephant_path = nx.shortest_path(graph, source=item.current_loc, target=elephant_path_next_valve)
-
-                shortest_path = min(
-                    len(your_path) - 1 ,
-                    len(elephant_path) - 1)
-                total_pressure_released += updated_pressure_being_released * shortest_path
-
-                new_priority = - total_pressure_released - (
-                        max_minutes - item.current_step - 1) * potential
-                queue.put(
-                    State2(
-                        new_priority,
-                        item.current_step + shortest_path + 1,
-                        updated_pressure_being_released,
-                        total_pressure_released,
-                        valves_open,
-                        your_path[shortest_path],
-                        elephant_path[shortest_path],
-                        item.you_in_route_to,
-                        elephant_path_next_valve
-                    )
-                )
+                                steps_taken,
+                                current_open_pressure,
+                                total_pressure_released_after_steps,
+                                current_open_valves,
+                                you_path[num_steps],
+                                elephant_path[num_steps],
+                                you_path[-1],
+                                elephant_path[-1],
+                            )
+                        )
 
 
 
