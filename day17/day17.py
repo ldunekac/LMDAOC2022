@@ -1,6 +1,7 @@
 
 import numpy as np
 from dataclasses import dataclass
+import time
 
 @ dataclass
 class Coord:
@@ -25,7 +26,7 @@ class TowerSimulation:
         max_block_height = 4
         self.tower_width = 7
         self.wind_currents = wind_currents
-        self.tower_height = (num_of_falling_blocks + 5) * max_block_height
+        self.tower_height = (num_of_falling_blocks + 1) * max_block_height
         self.current_tower_height = 0
         self.tower = np.zeros((self.tower_height, self.tower_width))
         self.pieces = [
@@ -96,34 +97,68 @@ class TowerSimulation:
         next_piece = next(self.piece_stream)
         piece_start_y =  2
         piece_start_x = self.current_tower_height + 3
+        num_times_the_wind_blows = 0
         # bottom left needs to be:
         #   2 spots right of the left wall
         #   the bottom need to be 3 squares above the current tower height
         piece_offset = Coord(piece_start_x - next_piece.bottom_most_pos,
                              piece_start_y - next_piece.left_most_pos)
         wind_direction = next(self.wind_stream)
+        num_times_the_wind_blows += 1
         self.move_piece_let_or_right(next_piece, piece_offset, wind_direction)
         while True:
-
             if not self.move_piece_down(next_piece, piece_offset):
                 break
             wind_direction = next(self.wind_stream)
             self.move_piece_let_or_right(next_piece, piece_offset, wind_direction)
-
-
+            num_times_the_wind_blows += 1
 
         piece_loc_in_tower = [Coord(piece_coord.x + piece_offset.x, piece_coord.y + piece_offset.y) for piece_coord in next_piece.coordinates]
         for coord in piece_loc_in_tower:
             self.tower[coord.x][coord.y] = 1
 
         self.current_tower_height = max(self.current_tower_height, piece_offset.x + next_piece.top_most_pos + 1)
+        return num_times_the_wind_blows, piece_offset.y
 
-    def run(self):
-        for i in range(self.number_of_blocks_to_drop):
+    def find_repeat(self):
+        piece_dropping = -1
+        num_peaces = len(self.pieces)
+        len_of_wind_stream = len(self.wind_currents)
+        current_wind_stream = -1
+        loop_max =num_peaces * len_of_wind_stream
+
+        wind_streams_seen = []
+        offset_of_wind_stream = []
+        tower_heights = []
+
+        for i in range(self.number_of_blocks_to_drop): # max number of iterations
+            wind, offset = self.drop_piece()
+            current_wind_stream = (wind + current_wind_stream) % len_of_wind_stream
+            piece_dropping = (piece_dropping + 1) % num_peaces
+
+            if i % loop_max == 0: # if we do one complete loop when the pattern aligns
+                # This only happens every time a
+                # print(f"At loop iteration {i}")
+                if current_wind_stream in wind_streams_seen:
+                    ind = wind_streams_seen.index(current_wind_stream)
+                    loop_amount = i - offset_of_wind_stream[ind]
+                    tower_height_per_pattern = self.current_tower_height - tower_heights[ind]
+                    return i, loop_amount, tower_height_per_pattern
+                else:
+                    # print(f"Current wind being added {current_wind_stream}")
+                    wind_streams_seen.append(current_wind_stream)
+                    offset_of_wind_stream.append(i)
+                    tower_heights.append(self.current_tower_height)
+
+
+
+    def run(self, drop_n_blocks = None):
+        num_to_drop = drop_n_blocks if drop_n_blocks else self.number_of_blocks_to_drop
+        for i in range(num_to_drop):
             self.drop_piece()
 
 
-    def print(self):
+    def print(self, file = None):
         rows = ["+-------+"]
         for i in range(self.current_tower_height + 1):
             row  = "|"
@@ -134,9 +169,14 @@ class TowerSimulation:
                     row += "#"
             row += "|"
             rows.append(row)
-
-        for row in range(len(rows)-1, 0-1, -1):
-            print(rows[row])
+        if file:
+            with open(file, "w+") as f:
+                for row in range(len(rows)-1, 0-1, -1):
+                    f.write(rows[row])
+                    f.write("\n")
+        else:
+            for row in range(len(rows) - 1, 0 - 1, -1):
+                print(rows[row])
 
 
 def read_input(file):
@@ -145,26 +185,44 @@ def read_input(file):
 
 
 
-def solution1(file: str) -> int:
+def solution1(file: str, out_file) -> int:
     sim = TowerSimulation(2022, read_input(file))
     sim.run()
+    sim.print(out_file)
     return sim.current_tower_height
 
 def solution2(file: str) -> int:
-    pass
+    total_sim_iterations = 1000000000000
+    sim = TowerSimulation(100_000_000, read_input(file))
+    iterations_completed, num_blocks_per_repeat, height_per_repeat = sim.find_repeat()
+
+    iterations_to_go = total_sim_iterations - iterations_completed
+    amount_to_sim = iterations_to_go % num_blocks_per_repeat
+    number_of_skips = (iterations_to_go // num_blocks_per_repeat)
+    print(f"{sim.current_tower_height=}, {sim.tower_height}")
+    print(f"{iterations_completed=}, {amount_to_sim=}, {number_of_skips=}, {num_blocks_per_repeat=}")
+    sim.run(amount_to_sim-1)
+    print(f"{sim.current_tower_height=}")
+    return sim.current_tower_height + (number_of_skips * height_per_repeat)
+
 
 
 def main():
-    ans = solution1("example.txt")
+    ans = solution1("example.txt", "day_1_example_out.txt")
     print(f"Solution 1 for Example is: {ans}")
-    ans = solution1("input.txt")
+    ans = solution1("input.txt", "day_1_input_out.txt")
     print(f"Solution 1 for Input is: {ans}")
-    #
-    # ans = solution2("example.txt")
-    # print(f"Solution 2 for Example is: {ans}")
-    # ans = solution2("input.txt")
-    # print(f"Solution 2 for Input is: {ans}")
 
+    ans = solution2("example.txt")
+    print(f"Solution 2 for Example is: {ans}")
+    start = time.perf_counter()
+    ans = solution2("input.txt")
+    end = time.perf_counter()
+    print(f"Solution 2 for Input is: {ans}")
+    print(f"Elapsed Time {end - start}")
 
 if __name__ == "__main__":
     main()
+
+
+
