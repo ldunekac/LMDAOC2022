@@ -334,8 +334,8 @@ def simulateWithElephant3(graph, nodes, potential, node_to_flow):
         if queue.empty():
             break
         item = queue.get()
-        if count % 100000 == 0:
-            print(item)
+        # if count % 100000 == 0:
+        #     print(item)
         if item.current_step == max_minutes:
             print(item)
             return item.total_pressure_released + item.pressure_being_released
@@ -478,11 +478,11 @@ def solution2(file):
 
 
 def main():
-    # ans = solution1("example.txt")
-    # print(f"Solution 1 for Example is: {ans}")
-    #
-    # ans = solution1("input.txt")
-    # print(f"Solution 1 for Input is: {ans}")
+    ans = solution1("example.txt")
+    print(f"Solution 1 for Example is: {ans}")
+
+    ans = solution1("input.txt")
+    print(f"Solution 1 for Input is: {ans}")
 
     ans = solution2("example.txt")
     print(f"Solution 2 for Example is: {ans}")
