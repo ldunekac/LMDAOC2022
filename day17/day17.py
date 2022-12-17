@@ -1,12 +1,13 @@
-
 import numpy as np
 from dataclasses import dataclass
 import time
+
 
 @ dataclass
 class Coord:
     x: int
     y: int
+
 
 class Piece:
 
@@ -40,6 +41,7 @@ class TowerSimulation:
         self.piece_stream = self.get_next_piece()
         self.wind_stream = self.get_next_wind()
 
+
     def get_next_wind(self):
         def wind_current_to_coord_offset(wind_direction):
             if wind_direction == "<":
@@ -56,12 +58,14 @@ class TowerSimulation:
             yield wind_current_to_coord_offset(self.wind_currents[wind_index])
             wind_index = (wind_index + 1) % wind_current_len
 
+
     def get_next_piece(self):
         piece_index = 0
         number_of_pieces = len(self.pieces)
         while True:
             yield self.pieces[piece_index]
             piece_index = (piece_index + 1) % number_of_pieces
+
 
     def move_piece_let_or_right(self, piece, piece_offset, wind_direction):
         piece_offset.y += wind_direction
@@ -83,6 +87,7 @@ class TowerSimulation:
                 return True
         return False
 
+
     def move_piece_down(self, piece, piece_offset):
         piece_offset.x -= 1 # move down
         piece_hit_ground = lambda x: x < 0
@@ -92,6 +97,7 @@ class TowerSimulation:
             return False
         else:
             return True
+
 
     def drop_piece(self):
         next_piece = next(self.piece_stream)
@@ -136,20 +142,19 @@ class TowerSimulation:
             current_wind_stream = (wind + current_wind_stream) % len_of_wind_stream
             piece_dropping = (piece_dropping + 1) % num_peaces
 
-            if i % loop_max == 0: # if we do one complete loop when the pattern aligns
-                # This only happens every time a
-                # print(f"At loop iteration {i}")
+            if i % loop_max == 0:
+                # Pattern is guaranteed to repeat every max loop
+                # We just need to find a wind offset that we have seen before
                 if current_wind_stream in wind_streams_seen:
                     ind = wind_streams_seen.index(current_wind_stream)
                     loop_amount = i - offset_of_wind_stream[ind]
                     tower_height_per_pattern = self.current_tower_height - tower_heights[ind]
-                    return i, loop_amount, tower_height_per_pattern
+                    iterations_completed = i + 1
+                    return iterations_completed, loop_amount, tower_height_per_pattern
                 else:
-                    # print(f"Current wind being added {current_wind_stream}")
                     wind_streams_seen.append(current_wind_stream)
                     offset_of_wind_stream.append(i)
                     tower_heights.append(self.current_tower_height)
-
 
 
     def run(self, drop_n_blocks = None):
@@ -184,27 +189,27 @@ def read_input(file):
         return f.readline().strip()
 
 
-
 def solution1(file: str, out_file) -> int:
     sim = TowerSimulation(2022, read_input(file))
     sim.run()
     sim.print(out_file)
     return sim.current_tower_height
 
+
 def solution2(file: str) -> int:
     total_sim_iterations = 1000000000000
-    sim = TowerSimulation(100_000_000, read_input(file))
+    lets_hope_this_is_a_tall_enough_tower = 100_000_000 # Computer can't allocate anything much bigger :)
+    sim = TowerSimulation(lets_hope_this_is_a_tall_enough_tower, read_input(file))
     iterations_completed, num_blocks_per_repeat, height_per_repeat = sim.find_repeat()
 
     iterations_to_go = total_sim_iterations - iterations_completed
-    amount_to_sim = iterations_to_go % num_blocks_per_repeat
     number_of_skips = (iterations_to_go // num_blocks_per_repeat)
+    remaining_iterations_after_skip = iterations_to_go % num_blocks_per_repeat
     print(f"{sim.current_tower_height=}, {sim.tower_height}")
-    print(f"{iterations_completed=}, {amount_to_sim=}, {number_of_skips=}, {num_blocks_per_repeat=}")
-    sim.run(amount_to_sim-1)
+    print(f"{iterations_completed=}, {remaining_iterations_after_skip=}, {number_of_skips=}, {num_blocks_per_repeat=}")
+    sim.run(remaining_iterations_after_skip) # subtract 1 to
     print(f"{sim.current_tower_height=}")
     return sim.current_tower_height + (number_of_skips * height_per_repeat)
-
 
 
 def main():
@@ -221,8 +226,7 @@ def main():
     print(f"Solution 2 for Input is: {ans}")
     print(f"Elapsed Time {end - start}")
 
+
 if __name__ == "__main__":
     main()
-
-
 
