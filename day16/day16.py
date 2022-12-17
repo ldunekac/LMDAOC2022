@@ -55,6 +55,7 @@ def simulate(graph, nodes, potential, node_to_flow):
         if item.current_step == max_minutes or  len(item.valves_open) == node_len:
             print(item)
             return item.total_pressure_released + potential * (max_minutes - item.current_step)
+
         for valve_to_open in nodes - item.valves_open:
             steps_to_next_valve = len(nx.shortest_path(graph, source=item.current_loc, target=valve_to_open)) - 1
             if steps_to_next_valve == 0:
@@ -91,7 +92,7 @@ def simulate(graph, nodes, potential, node_to_flow):
 @dataclass(frozen=True, order=True)
 class State2:
     priority: int
-    current_step: int = field(compare=False)
+    current_step: int
     pressure_being_released: int = field(compare=False)
     total_pressure_released: int = field(compare=False)
     valves_open: set = field(compare=False)
@@ -132,7 +133,6 @@ def simulateWithElephant(graph, nodes, potential, node_to_flow):
             if not item.current_loc in valves_open:
                 updated_pressure_being_released += node_to_flow[item.current_loc]
                 valves_open.add(item.current_loc)
-
 
         if not elephant_at_dest_valve:
             elephant_next_pos = nx.shortest_path(graph, source=item.elephant_current_loc, target=item.elephant_in_route_to)[1]
@@ -207,14 +207,30 @@ def simulateWithElephant2(graph, nodes, potential, node_to_flow):
         if queue.empty():
             break
         item = queue.get()
-        if item.current_step == max_minutes:
-            print("END")
+        if item.current_step > max_minutes:
             print(item)
+            return item.total_pressure_released
+
+        if item.current_step == max_minutes:
+            total = item.total_pressure_released + item.pressure_being_released
+            new_priority = max_potential - total
+            queue.put(
+                State2(
+                new_priority,
+                max_minutes + 1,
+                item.pressure_being_released,
+                total,
+                item.valves_open,
+                "",
+                "",
+                "",
+                ""
+            ))
             return item.total_pressure_released
 
         if len(item.valves_open) == node_len:
             assert item.pressure_being_released == potential
-            total_pressure_released = item.total_pressure_released +  item.pressure_being_released * (max_minutes - item.current_step + 1)
+            total_pressure_released = item.total_pressure_released +  item.pressure_being_released * (max_minutes - item.current_step)
             assert total_pressure_released < max_potential
             queue.put(State2(
                 -total_pressure_released,
@@ -303,6 +319,150 @@ def simulateWithElephant2(graph, nodes, potential, node_to_flow):
 
 
 
+def simulateWithElephant3(graph, nodes, potential, node_to_flow):
+    max_minutes = 26
+    nodes = set(nodes)
+    node_len = len(nodes)
+    max_potential = max_minutes * potential
+
+    queue = PriorityQueue()
+    queue.put(State2(0, 0, 0, 0, set(), "AA", "AA", "AA", "AA"))
+    count = 0
+    max_state = State2(0, 0, 0, 0, set(), "AA", "AA", "AA", "AA")
+    while True:
+        count += 1
+        if queue.empty():
+            break
+        item = queue.get()
+        if count % 100000 == 0:
+            print(item)
+        if item.current_step == max_minutes:
+            print(item)
+            return item.total_pressure_released + item.pressure_being_released
+
+        if len(item.valves_open) == node_len+1:
+            print(item)
+            return item.total_pressure_released + potential * (max_minutes - item.current_step + 1)
+
+        if item.current_step > max_state.current_step and item.pressure_being_released > max_state.pressure_being_released and item.total_pressure_released > max_state.total_pressure_released:
+            max_state = item
+
+        if 0 < item.pressure_being_released < max_state.pressure_being_released:
+            # if they have a lower rate
+            rate_diff = max_state.pressure_being_released - item.pressure_being_released
+            toat_diff = max_state.total_pressure_released - item.total_pressure_released
+            num_step_diff = toat_diff // rate_diff
+            num_step_diff += max_state.current_step - item.current_step
+            if num_step_diff >= 3:
+                continue
+
+        you_at_dest_valve = item.current_loc == item.you_in_route_to
+        elephant_at_dest_valve = item.elephant_current_loc == item.elephant_in_route_to
+
+        updated_pressure_being_released = item.pressure_being_released
+        you_next_pos = item.current_loc
+        elephant_next_pos = item.elephant_current_loc
+        valves_open = item.valves_open.copy()
+        total_pressure_released = item.total_pressure_released + item.pressure_being_released
+        if not you_at_dest_valve:
+            you_next_pos = nx.shortest_path(graph, source=item.current_loc, target=item.you_in_route_to)[1]
+        else:
+            if not item.current_loc in valves_open:
+                updated_pressure_being_released += node_to_flow[item.current_loc]
+                valves_open.add(item.current_loc)
+
+        if not elephant_at_dest_valve:
+            elephant_next_pos = nx.shortest_path(graph, source=item.elephant_current_loc, target=item.elephant_in_route_to)[1]
+        else:
+            if not item.elephant_current_loc in valves_open:
+                updated_pressure_being_released += node_to_flow[item.elephant_current_loc]
+                valves_open.add(item.elephant_current_loc)
+
+        remaining_valves = nodes - item.valves_open
+        if you_at_dest_valve and elephant_at_dest_valve:
+            pairs = set()
+            for you_next_valve in remaining_valves:
+                for elephant_next_valve in remaining_valves:
+                    if item.current_loc == item.elephant_current_loc:
+                        # don't mirror the same path
+                        if (you_next_valve, elephant_next_valve) in pairs or (elephant_next_valve, you_next_valve) in pairs:
+                            continue
+                        pairs.add((you_next_valve, elephant_next_valve))
+                        pairs.add((elephant_next_valve, you_next_valve))
+                    new_priority = max_potential - total_pressure_released - (max_minutes - item.current_step - 1) * potential
+                    queue.put(
+                        State2(
+                            new_priority,
+                            item.current_step + 1,
+                            updated_pressure_being_released,
+                            total_pressure_released,
+                            valves_open,
+                            item.current_loc,
+                            item.elephant_current_loc,
+                            you_next_valve,
+                            elephant_next_valve
+                        ))
+        elif you_at_dest_valve:
+            for you_next_valve in remaining_valves:
+                new_priority = max_potential - total_pressure_released - (
+                            max_minutes - item.current_step - 1) * potential
+                queue.put(
+                    State2(
+                        new_priority,
+                        item.current_step + 1,
+                        updated_pressure_being_released,
+                        total_pressure_released,
+                        valves_open,
+                        you_next_pos,
+                        elephant_next_pos,
+                        you_next_valve,
+                        item.elephant_in_route_to
+                    )
+                )
+        elif elephant_at_dest_valve:
+            for elephant_next_valve in remaining_valves:
+                new_priority = max_potential - total_pressure_released - (
+                        max_minutes - item.current_step - 1) * potential
+                queue.put(
+                    State2(
+                        new_priority,
+                        item.current_step + 1,
+                        updated_pressure_being_released,
+                        total_pressure_released,
+                        valves_open,
+                        you_next_pos,
+                        elephant_next_pos,
+                        item.you_in_route_to,
+                        elephant_next_valve
+                    )
+                )
+        else: # No one has reached their goal
+            # you_next_steps = nx.shortest_path(graph, source=item.current_loc, target=item.you_in_route_to)
+            # elephant_next_steps = nx.shortest_path(graph, source=item.elephant_current_loc, target=item.elephant_in_route_to)
+            # steps_to_go = min(
+            #     len(you_next_steps) - 1,
+            #     len(elephant_next_steps) - 1
+            # )
+            # total_pressure_released = item.total_pressure_released + (item.pressure_being_released * steps_to_go)
+            new_priority = max_potential - total_pressure_released - (
+                    max_minutes - item.current_step - 1) * potential
+            queue.put(
+                State2(
+                    new_priority,
+                    item.current_step + 1,
+                    updated_pressure_being_released,
+                    total_pressure_released,
+                    valves_open,
+                    you_next_pos,
+                    elephant_next_pos,
+                    item.you_in_route_to,
+                    item.elephant_in_route_to
+                )
+            )
+
+
+
+
 def solution1(file):
     graph, non_zero_nodes, potential, flow_dict = make_graph(file)
     return simulate(graph, non_zero_nodes, potential, flow_dict)
@@ -314,20 +474,18 @@ def solution1(file):
 
 def solution2(file):
     graph, non_zero_nodes, potential, flow_dict = make_graph(file)
-    return simulateWithElephant2(graph, non_zero_nodes, potential, flow_dict)
+    return simulateWithElephant3(graph, non_zero_nodes, potential, flow_dict)
 
 
 def main():
     # ans = solution1("example.txt")
     # print(f"Solution 1 for Example is: {ans}")
-    # return
     #
     # ans = solution1("input.txt")
     # print(f"Solution 1 for Input is: {ans}")
 
     ans = solution2("example.txt")
     print(f"Solution 2 for Example is: {ans}")
-    return
 
     start = time.perf_counter()
     ans = solution2("input.txt")
