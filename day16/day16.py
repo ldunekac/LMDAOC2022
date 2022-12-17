@@ -348,7 +348,7 @@ def simulateWithElephant3(graph, nodes, potential, node_to_flow):
             max_state = item
 
         if 0 < item.pressure_being_released < max_state.pressure_being_released:
-            # if they have a lower rate
+            # Aggressive Negotiations
             rate_diff = max_state.pressure_being_released - item.pressure_being_released
             toat_diff = max_state.total_pressure_released - item.total_pressure_released
             num_step_diff = toat_diff // rate_diff
