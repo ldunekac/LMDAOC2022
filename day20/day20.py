@@ -3,7 +3,13 @@ from copy import deepcopy
 
 def unencrypt_file(encrypted_list):
     unencrypted_list = deepcopy(encrypted_list)
-    encrypted_num_to_unencrpyted_location = [x for x in range(len(unencrypted_list))]
+    # The index of mapping aligns with the index of encrypted_list
+    # The value of mapping, is the index in the unencrypted list 
+    # E.g. If encrypted_list[4] = -3
+    # and if unencrypeted_list[7] = -3
+    # Then the mapping[4] = 7. 
+    # We can say that encrypted_list[4] = unencrypeted_list[mapping[4]]
+    mapping = [x for x in range(len(unencrypted_list))]
 
 def read_input(file):
     with open(file, "r") as f:
