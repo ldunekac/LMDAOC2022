@@ -5,8 +5,16 @@ char_to_op = {
     "+": add,
     "-": sub,
     "*": mul,
-    "/": floordiv,
+    "/": truediv,
     "=": eq,
+    None: None
+}
+
+char_to_opposit_op = {
+    "+": sub,
+    "-": add,
+    "*": truediv,
+    "/": mul,
     None: None
 }
 
@@ -31,13 +39,95 @@ class Monkey:
         if not self.number is None:
             return self.number
         else:
-            return self.operation(self.left_monkey.get_number(), self.right_monkey.get_number())
+            return char_to_op[self.operation](self.left_monkey.get_number(), self.right_monkey.get_number())
 
     def get_left_number(self):
         return self.left_monkey.get_number()
 
     def get_right_number(self):
         return self.right_monkey.get_number()
+
+    def is_humn_under_me(self):
+        if self.name == "humn":
+            return True
+        elif not self.number is None:
+            return False
+        else:
+            return self.left_monkey.is_humn_under_me() or self.right_monkey.is_humn_under_me()
+
+    def is_humn_in_right(self):
+        if self.name == "humn":
+            return True
+        elif not self.number is None:
+            return False
+        else:
+            return self.right_monkey.is_humn_under_me()
+
+    def calc_humn_val(self, current_val=None):
+        if self.name == "humn":
+            return current_val
+
+        if current_val is None:
+            if self.is_humn_in_right():
+                target_val = self.left_monkey.get_left_number()
+                return self.right_monkey.calc_humn_val(target_val)
+            else:
+                target_val = self.right_monkey.get_number()
+                return self.left_monkey.calc_humn_val(target_val)
+        else:
+            if self.is_humn_in_right():
+                # left = left_monkey
+                # target = left op human
+                if "+" == self.operation:
+                    # target = left + humn
+                    # humn = target - left
+                    humn = current_val - self.left_monkey.get_number()
+                    return self.right_monkey.calc_humn_val(humn)
+                elif "-" == self.operation:
+                    # target = left - humn
+                    # humn = -(target - left)
+                    humn = -1 * (current_val - self.left_monkey.get_number())
+                    return self.right_monkey.calc_humn_val(humn)
+                elif "*" == self.operation:
+                    # target = left * humn
+                    # humn = target/left
+                    humn = current_val / self.left_monkey.get_number()
+                    return self.right_monkey.calc_humn_val(humn)
+                elif "/" == self.operation:
+                    # target = left / humn
+                    # humn = left / target
+                    humn = self.left_monkey.get_number() / current_val
+                    return self.right_monkey.calc_humn_val(humn)
+                else:
+                    print(self.name)
+                    print(self.operation)
+                    raise
+            else: # humn in left
+                # target = humn op right
+                if "+" == self.operation:
+                    # target = humn + right
+                    # humn = target - right
+                    humn = current_val - self.right_monkey.get_number()
+                    return self.left_monkey.calc_humn_val(humn)
+                elif "-" == self.operation:
+                    # target = humn - right
+                    # humn = target + right
+                    humn = current_val + self.right_monkey.get_number()
+                    return self.left_monkey.calc_humn_val(humn)
+                elif "*" == self.operation:
+                    # target = humn * right
+                    # humn = target / right
+                    humn = current_val / self.right_monkey.get_number()
+                    return self.left_monkey.calc_humn_val(humn)
+                elif "/" == self.operation:
+                    # target = humn / right
+                    # humn = target * right
+                    humn = current_val * self.right_monkey.get_number()
+                    return self.left_monkey.calc_humn_val(humn)
+                else:
+                    print(self.name)
+                    print(self.operation)
+                    raise
 
 def read_input(file):
     monkey_dict = {}
@@ -58,7 +148,7 @@ def read_input(file):
                 operation = parts[2]
                 right_monkey_name = parts[3]
                 
-            monkey_dict[name] = Monkey(name, number, char_to_op[operation], left_monkey_name, right_monkey_name)
+            monkey_dict[name] = Monkey(name, number, operation, left_monkey_name, right_monkey_name)
 
     for key, monkey in monkey_dict.items():
         if not monkey.number:
@@ -70,56 +160,28 @@ def read_input(file):
 
 def solution1(file: str) -> int:
     root, _ = read_input(file)
-    return root.get_number()
+    return int(root.get_number())
 
 
 
 def solution2(file: str) -> int:
+    # humn only shows up one in the operations
     root, humn = read_input(file)
-    root.operation = eq
-    current_num = 1
-    min_num = current_num
-    max_num = current_num
-    humn.number = current_num
-
-    # right number does not depend on your input
-    # find max
-    # while True:
-    #     current_num = 1
-    #     min_num = current_num
-    #     max_num = current_num
-    #     humn.number = current_num
-    #     left_num = root.get_left_number()
-    #     right_num = root.get_right_number()
-    #     if left_num > right_num
-        
-
-    # prev = 0
-    # for i in range(100, 103):
-    #     humn.number = i
-    #     if root.get_number():
-    #         return i
-    #     else:
-    #         left_num = root.get_left_number()
-    #         print(prev - left_num)
-    #         print(left_num, root.get_right_number())
-    #         prev = left_num
-    # return None
+    return int(root.calc_humn_val())
 
 
 def main():
-    # ans = solution1("example.txt")
-    # print(f"Solution 1 for Example is: {ans}")
-    # ans = solution1("input.txt")
-    # print(f"Solution 1 for Input is: {ans}")
-    # #
+    ans = solution1("example.txt")
+    print(f"Solution 1 for Example is: {ans}")
+    ans = solution1("input.txt")
+    print(f"Solution 1 for Input is: {ans}")
+    
     ans = solution2("example.txt")
     print(f"Solution 2 for Example is: {ans}")
-    # ans = solution2("input.txt")
-    # print(f"Solution 2 for Example is: {ans}")
+    ans = solution2("input.txt")
+    print(f"Solution 2 for Example is: {ans}")
 
-262412007595970
-46779208742730
+
 if __name__ == "__main__":
     main()
 
