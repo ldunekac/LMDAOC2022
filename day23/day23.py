@@ -1,6 +1,6 @@
 
 
-def caculate_total_area(elves):
+def calculate_total_area(elves):
     min_row = min(row for row, _ in elves)
     max_row = max(row for row, _ in elves)
     min_col = min(col for _, col in elves)
@@ -24,6 +24,31 @@ def print_elves(elves):
                 print('.', end='')
         print(row, flush=True)
 
+def sim_count(elves):
+    num_elves = len(elves)
+    location_check = [
+        ((-1, -1), (-1, 0), (-1, 1)), # north
+        ((1, -1), (1, 0), (1, 1)), # south
+        ((1, -1), (0, -1), (-1, -1)), # west
+        ((1, 1), (0, 1), (-1, 1)), # east
+    ]
+
+    i = 0
+    old_locs = elves[:]
+    while True:
+        i += 1
+        new_loc = take_step(old_locs, location_check)
+        location_check.append(location_check.pop(0))
+        same = True
+        for j in range(num_elves):
+            if not new_loc[j] == old_locs[j]:
+                same = False
+                break
+        if same:
+            return i
+        else:
+            old_locs = new_loc
+
 def sim(elves):
     location_check = [
         ((-1, -1), (-1, 0), (-1, 1)), # north
@@ -33,20 +58,16 @@ def sim(elves):
     ]
 
     for ind in range(10):
-        elves = take_step(elves, location_check, ind)
+        elves = take_step(elves, location_check)
         location_check.append(location_check.pop(0))
         # print_elves(elves)
         # print("-------------------------")
     return elves
 
-def take_step(elves, location_check, round):
+def take_step(elves, location_check):
     purpose_directions = []
     all_elves_location = set(elves)
 
-    # print(f"-----START------- {round}")
-    # print_elves(elves)
-    # print('------------')
-    # print(location_check)
     for elf in elves:
         total_elves_in_spot = 0
         new_direction = None
@@ -62,8 +83,6 @@ def take_step(elves, location_check, round):
             purpose_directions[-1] = elf
         elif total_elves_in_spot > 0 and new_direction is None: # could not find a position to move
             purpose_directions.append(elf)
-
-    # print(purpose_directions)
 
     # find duplicates
     new_positions = set()
@@ -95,12 +114,12 @@ def read_input(file: str):
 def solution1(file: str) -> int:
     elves = read_input(file)
     elves = sim(elves)
-    # print_elves(elves)
-    return caculate_total_area(elves)
+    return calculate_total_area(elves)
 
 
 def solution2(file: str) -> int:
-    pass
+    elves = read_input(file)
+    return sim_count(elves)
 
 def main():
     ans = solution1("example.txt")
@@ -109,11 +128,11 @@ def main():
     print(f"Solution 1 for Example 2 is: {ans}")
     ans = solution1("input.txt")
     print(f"Solution 1 for Input is: {ans}")
-    #
-    # ans = solution2("example.txt")
-    # print(f"Solution 2 for Example is: {ans}")
-    # ans = solution2("input.txt")
-    # print(f"Solution 2 for Example is: {ans}")
+
+    ans = solution2("example2.txt")
+    print(f"Solution 2 for Example 2 is: {ans}")
+    ans = solution2("input.txt")
+    print(f"Solution 2 for Example is: {ans}")
 
 
 if __name__ == "__main__":
