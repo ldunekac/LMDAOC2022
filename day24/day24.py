@@ -102,7 +102,7 @@ def norm1(start, end):
 def get_lizzard_state(step_num, bounds):
     return step_num % ((bounds[0] - 1) * (bounds[1] - 1))
 
-def sim(start, end, bounds):
+def sim(lizzard_state, start, end, bounds):
     pq = PriorityQueue()
     max_row = bounds[0]
     max_col = bounds[1]
@@ -110,11 +110,12 @@ def sim(start, end, bounds):
         end[0] - start[0] + end[1] - start[1],
         0,
         start,
-        0
+        lizzard_state
     )
     pq.put(begin)
 
     min_steps = None
+    lizzard_state_at_min_steps = None
 
     seen = {}
 
@@ -128,7 +129,7 @@ def sim(start, end, bounds):
             break
 
         next_state = pq.get()
-        lizzard_state = get_lizzard_state(next_state.num_steps, bounds)
+        lizzard_state = get_lizzard_state(next_state.lizzard_state, bounds)
         if (next_state.position, lizzard_state) in seen.keys():
             if next_state.num_steps < seen[(next_state.position, lizzard_state)]:
                  seen[(next_state.position, lizzard_state)] = next_state.num_steps
@@ -141,9 +142,11 @@ def sim(start, end, bounds):
             if min_steps is None:
                 print(f"First min {next_state.num_steps}")
                 min_steps = next_state.num_steps
+                lizzard_state_at_min_steps = next_state.lizzard_state
             else:
                 if next_state.num_steps < min_steps:
                     min_steps = next_state.num_steps
+                    lizzard_state_at_min_steps = next_state.lizzard_state
                     print(f"New min {min_steps}")
         
         if min_steps is not None:
@@ -151,7 +154,7 @@ def sim(start, end, bounds):
             if best_remaining >= min_steps:
                 continue
 
-        new_lizzards_positions = walk_the_lizzards(next_state.num_steps + 1, bounds)
+        new_lizzards_positions = walk_the_lizzards(get_lizzard_state(next_state.lizzard_state + 1, bounds), bounds)
         crow, ccol = next_state.position
         next_possilbe_movements = [(crow + rowd, ccol + cold) for rowd, cold in movement ]
         for next_pos in next_possilbe_movements:
@@ -159,58 +162,60 @@ def sim(start, end, bounds):
                 if 1 <= next_pos[0] < max_row and 1 <= next_pos[1] < max_col:
                     pq.put(
                         State(
-                            end[0] - next_pos[0] + end[1] - next_pos[1],
+                            norm1(next_pos, end),
                             next_state.num_steps + 1,
                             next_pos,
-                            lizzard_state
+                            get_lizzard_state(lizzard_state + 1, bounds)
                         )
                     )
                 elif next_pos in [start, end]:
                     pq.put(
                         State(
-                            end[0] - next_pos[0] + end[1] - next_pos[1],
+                            norm1(next_pos, end),
                             next_state.num_steps + 1,
                             next_pos,
-                            lizzard_state
+                            get_lizzard_state(lizzard_state + 1, bounds)
                         )
                     )
-    return min_steps
+    return min_steps, lizzard_state_at_min_steps
 
 def solution1(file: str) -> int:
     start, end, bounds = read_input(file)
 
-    # r = (bounds[0] - 1) * (bounds[1] - 1)
-    # print(r)
-    # for i in range(r):
-    #     walk_the_lizzards(i, bounds)
-
-    # print(walk_the_lizzards(0, bounds))
-    # print(walk_the_lizzards(3000, bounds))
-    # print_board(start, bounds, walk_the_lizzards(0, bounds))
-    # print_board(start, bounds, walk_the_lizzards(1, bounds))
-    # print_board(start, bounds, walk_the_lizzards(2, bounds))
-    # print_board(start, bounds, walk_the_lizzards(3, bounds))
-    # print_board(start, bounds, walk_the_lizzards(4, bounds))
-    # return 
-    # print(bounds)
-    # return
-    return sim(start, end, bounds)
+    return sim(0, start, end, bounds)[0]
 
 def solution2(file: str) -> int:
-    pass
+    start, end, bounds = read_input(file)
+    total_steps = 0
+    num_steps, lizzard_state = sim(0, start, end, bounds)
+    print(num_steps)
+    total_steps += num_steps
+    num_steps, lizzard_state = sim(lizzard_state, end, start, bounds)
+    print(num_steps)
+    total_steps += num_steps
+    num_steps, lizzard_state= sim(lizzard_state, start, end, bounds)
+    print(num_steps)
+    total_steps += num_steps
+
+    return total_steps
 
 def main():
     ans = solution1("example.txt")
     print(f"Solution 1 for Example is: {ans}")
+
     global lizzard_states
     lizzard_states = {}
     ans = solution1("input.txt")
     print(f"Solution 1 for Input is: {ans}")
 
-    # ans = solution2("example2.txt")
-    # print(f"Solution 2 for Example 2 is: {ans}")
-    # ans = solution2("input.txt")
-    # print(f"Solution 2 for Example is: {ans}")
+    lizzard_states = {}
+
+    ans = solution2("example.txt")
+    print(f"Solution 2 for Example is: {ans}")
+
+    lizzard_states = {}
+    ans = solution2("input.txt")
+    print(f"Solution 2 for Example is: {ans}")
 
 
 if __name__ == "__main__":
