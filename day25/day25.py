@@ -94,7 +94,7 @@ def main():
     ans = solution1("input.txt")
     print(f"Solution 1 for Input is: {ans}")
 
-
+    # NO part 2
     # ans = solution2("example.txt")
     # print(f"Solution 2 for Example is: {ans}")
 
